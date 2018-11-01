@@ -1,0 +1,7 @@
+
+*.pdb
+*.db
+*.opendb
+*.db-shm
+*.db-wal
+*.pch
