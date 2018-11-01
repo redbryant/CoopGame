@@ -1,0 +1,16 @@
+﻿  Building 11 actions with 4 processes...
+    [1/11] SharedPCH.Engine.cpp
+    [2/11] CoopGame.init.gen.cpp
+    [3/11] SWeapon.cpp
+    [4/11] CoopGameGameModeBase.cpp
+    [5/11] SCharacter.cpp
+    [6/11] CoopGameGameModeBase.gen.cpp
+    [7/11] SCharacter.gen.cpp
+    [8/11] SWeapon.gen.cpp
+    [9/11] CoopGame.cpp
+    [10/11] UE4Editor-CoopGame.lib
+       E:\Unreal Projects\CoopGame\Intermediate\Build\Win64\UE4Editor\Development\CoopGame\UE4Editor-CoopGame.lib ????귯?? ?? E:\Unreal Projects\CoopGame\Intermediate\Build\Win64\UE4Editor\Development\CoopGame\UE4Editor-CoopGame.exp ??u?? ??????? ??????.
+    [11/11] UE4Editor-CoopGame.dll
+       E:\Unreal Projects\CoopGame\Intermediate\Build\Win64\UE4Editor\Development\CoopGame\UE4Editor-CoopGame.suppressed.lib ????귯?? ?? E:\Unreal Projects\CoopGame\Intermediate\Build\Win64\UE4Editor\Development\CoopGame\UE4Editor-CoopGame.suppressed.exp ??u?? ??????? ??????.
+  Deploying CoopGameEditor Win64 Development...
+  Total build time: 40.05 seconds (Parallel executor: 37.70 seconds)
