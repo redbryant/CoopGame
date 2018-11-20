@@ -9,6 +9,9 @@
 #include "NavigationSystem/Public/NavigationSystem.h"
 #include "NavigationSystem/Public/NavigationPath.h"
 #include "DrawDebugHelpers.h"
+#include "Components/SphereComponent.h"
+#include "SCharacter.h"
+#include "Sound/SoundCue.h"
 
 
 // Sets default values
@@ -25,12 +28,23 @@ ASTrackerBot::ASTrackerBot()
 	HealthComp = CreateDefaultSubobject<USHealthComponent>(TEXT("HealthComp"));
 	HealthComp->OnHealthChanged.AddDynamic(this, &ASTrackerBot::OnHealthChanged);
 
+	SphereComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
+	SphereComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	SphereComp->SetCollisionResponseToAllChannels(ECR_Ignore);
+	SphereComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+
+	SphereComp->SetSphereRadius(200);
+	SphereComp->SetupAttachment(RootComponent);
+	
+
 	bUseVelocityChange = false;
 	MovementForce = 1000.0f;
 	RequiredDistanceToTarget = 100;
 
 	ExplosionDamage = 40;
 	ExplosionRadius = 200;
+
+	SelfDamageInterval = 0.25f;
 
 }
 
@@ -40,7 +54,14 @@ void ASTrackerBot::BeginPlay()
 	Super::BeginPlay();
 
 	// Find
-	NextPathPoint = GetNextPathPoint();
+	if (Role == ROLE_Authority)
+	{
+		NextPathPoint = GetNextPathPoint();
+	}
+
+	
+
+	//OnActorBeginOverlap.AddDynamic(this, &ASTrackerBot::NotifyActorBeginOverlap);
 	
 }
 
@@ -89,18 +110,32 @@ void ASTrackerBot::SelfDestruct()
 
 	bExplode = true;
 
-	UGameplayStatics::InternalSpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation());
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionEffect, GetActorLocation() );
 
-	TArray<AActor> IgnoreaActors;
-	IgnoreaActors.Add(this);
+	UGameplayStatics::PlaySoundAtLocation(this, ExplodeSound, GetActorLocation());
 
-	//Apply Damage!
-	UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoreaActors, this, GetInstigatorController(), true);
+	MeshComp->SetVisibility(false, true);
+	MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.0f, 0, 1.0f);
+	if (Role == ROLE_Authority)
+	{
+		TArray<AActor*> IgnoreaActors;
+		IgnoreaActors.Add(this);
 
-	// dELETE ACTOR
-	Destroy();
+		//Apply Damage!
+		UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, nullptr, IgnoreaActors, this, GetInstigatorController(), true);
+
+		DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 12, FColor::Red, false, 2.0f, 0, 1.0f);
+
+		SetLifeSpan(2.0f);
+	}
+
+
+}
+
+void ASTrackerBot::DamageSelf()
+{
+	UGameplayStatics::ApplyDamage(this, 20, GetInstigatorController(), this, nullptr);
 }
 
 // Called every frame
@@ -108,25 +143,29 @@ void ASTrackerBot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	float DistanceToTarget = (GetActorLocation() - NextPathPoint).Size();
-
-	if(DistanceToTarget <= RequiredDistanceToTarget)
+	if (Role == ROLE_Authority && !bExplode)
 	{
-		NextPathPoint = GetNextPathPoint();		
+		float DistanceToTarget = (GetActorLocation() - NextPathPoint).Size();
 
-		DrawDebugString(GetWorld(), GetActorLocation(), "Target Reached");
+		if (DistanceToTarget <= RequiredDistanceToTarget)
+		{
+			NextPathPoint = GetNextPathPoint();
+
+			DrawDebugString(GetWorld(), GetActorLocation(), "Target Reached");
+		}
+		else
+		{
+			FVector FroceDirection = NextPathPoint - GetActorLocation();
+			FroceDirection.Normalize();
+
+			FroceDirection *= MovementForce;
+
+			MeshComp->AddForce(FroceDirection, NAME_None, bUseVelocityChange);
+
+			DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + FroceDirection, 32, FColor::Yellow, false, 0.0f, 0, 1.0f);
+		}
 	}
-	else
-	{
-		FVector FroceDirection = NextPathPoint - GetActorLocation();
-		FroceDirection.Normalize();
-
-		FroceDirection *= MovementForce;
-
-		MeshComp->AddForce(FroceDirection, NAME_None, bUseVelocityChange);
-
-		DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + FroceDirection, 32, FColor::Yellow, false, 0.0f, 0, 1.0f);
-	}
+	
 
 	DrawDebugSphere(GetWorld(), NextPathPoint, 20, 12, FColor::Yellow, false, 4.0F, 1.0f);
 }
@@ -135,6 +174,29 @@ void ASTrackerBot::Tick(float DeltaTime)
 void ASTrackerBot::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+void ASTrackerBot::NotifyActorBeginOverlap(AActor * OtherActor)
+{
+	if (false == bStartedSelfDestruction && !bExplode)
+	{
+		ASCharacter* PlayerPawn = Cast<ASCharacter>(OtherActor);
+		if (PlayerPawn)
+		{
+			// we overlapped with a player!
+
+			if (Role == ROLE_Authority)
+			{
+				//Start self destruction sequence
+				GetWorldTimerManager().SetTimer(TimerHandle_SelfDamage, this, &ASTrackerBot::DamageSelf, SelfDamageInterval, true, 0.0f);
+			}
+
+			bStartedSelfDestruction = true;
+
+			UGameplayStatics::SpawnSoundAttached(SelfDestructSound, RootComponent);
+		}
+	}
+	
 }
 //
 //void ASCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
