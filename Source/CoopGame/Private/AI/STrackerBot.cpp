@@ -178,6 +178,8 @@ void ASTrackerBot::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 void ASTrackerBot::NotifyActorBeginOverlap(AActor * OtherActor)
 {
+	Super::NotifyActorBeginOverlap(OtherActor);
+
 	if (false == bStartedSelfDestruction && !bExplode)
 	{
 		ASCharacter* PlayerPawn = Cast<ASCharacter>(OtherActor);
