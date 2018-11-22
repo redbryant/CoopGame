@@ -3,6 +3,8 @@
 #include "SPickupActor.h"
 #include "Components/SphereComponent.h"
 #include "Components/DecalComponent.h"
+#include "TimerManager.h"
+#include "SPowerupActor.h"
 
 // Sets default values
 ASPickupActor::ASPickupActor()
@@ -24,6 +26,21 @@ void ASPickupActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	Respawn();
+}
+
+void ASPickupActor::Respawn()
+{
+	if (PowerUpInstance == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PowerUpClass is nullptr in %s. Please update your Bluepint"), *GetName());
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	PowerUpInstance = GetWorld()->SpawnActor<ASPowerupActor>(PowerupClass, GetActorTransform(), SpawnParams);
 }
 
 void ASPickupActor::NotifyActorBeginOverlap(AActor* OtherActor)
@@ -31,4 +48,14 @@ void ASPickupActor::NotifyActorBeginOverlap(AActor* OtherActor)
 	Super::NotifyActorBeginOverlap(OtherActor);
 
 	//TODO :: GRANT A POWERUP TO PLAYER IF AVAILBLE
+	if (PowerUpInstance)
+	{
+		PowerUpInstance->ActivatePowerup();
+		PowerUpInstance = nullptr;
+
+		//settimer to respawn;
+
+		GetWorldTimerManager().SetTimer(TimerHandle_RespawnTimer, this, &ASPickupActor::Respawn, CooldwnDuration);
+
+	}
 }

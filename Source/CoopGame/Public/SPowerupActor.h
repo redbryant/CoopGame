@@ -33,7 +33,7 @@ protected:
 	
 	int32 TicksProcessed;
 
-	void ActivatePowerup();
+	
 
 public:	
 
@@ -46,5 +46,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Powerups")
 	void OnExpired();
 
+
+	void ActivatePowerup();
 
 };
