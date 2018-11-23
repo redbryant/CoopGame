@@ -31,7 +31,7 @@ void ASPickupActor::BeginPlay()
 
 void ASPickupActor::Respawn()
 {
-	if (PowerUpInstance == nullptr)
+	if (PowerupClass == nullptr)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("PowerUpClass is nullptr in %s. Please update your Bluepint"), *GetName());
 		return;
