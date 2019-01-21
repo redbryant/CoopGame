@@ -14,5 +14,5 @@ class COOPGAME_API ACoopGameGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 	
-	//coop5
+	//not merge
 };
