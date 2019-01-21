@@ -15,6 +15,6 @@ class COOPGAME_API ACoopGameGameModeBase : public AGameModeBase
 	GENERATED_BODY()
 	
 	//testtest
-	
+	//test
 	///testetst
 };
