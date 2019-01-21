@@ -14,5 +14,5 @@ class COOPGAME_API ACoopGameGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 	
-	//171717171717
+	//1919191919
 };
